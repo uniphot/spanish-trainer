@@ -1,0 +1,47 @@
+# Publishes the app to GitHub Pages. GitHub Pages only serves static files, so the news that
+# serve.py fetches live is generated here instead: every 3 hours a fresh news.json is built
+# from the RSS feeds in news.py and deployed together with the app.
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html manifest.webmanifest sw.js css js icons _site/
+          # files the service worker caches for offline use
+          (cd _site && find index.html manifest.webmanifest css js icons -type f | sort > precache.txt)
+
+      - name: Fetch today's news
+        # a failed fetch must not block publishing the app; the page then shows its own error
+        run: python3 news.py _site/news.json || echo '{"fetched":0,"sources":[],"items":[],"error":"news fetch failed"}' > _site/news.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

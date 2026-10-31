@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A fondo · Spanish trainer</title>
+  <meta name="description" content="A research-based Spanish trainer: level test, grammar, listening, speaking and writing with spaced repetition.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#f6f2ea" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15120e" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-title" content="A fondo">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23b8432f'/><text x='16' y='23' font-family='Georgia' font-size='20' text-anchor='middle' fill='%23fff'>ñ</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar" aria-label="Main navigation"></aside>
+    <div id="scrim"></div>
+    <main id="main" tabindex="-1">
+      <header id="topbar">
+        <button id="menu-btn" class="icon-btn" aria-label="Open menu">☰</button>
+        <a href="#/" class="brand-mini">A fondo</a>
+        <span id="topbar-status"></span>
+      </header>
+      <div id="view"></div>
+    </main>
+  </div>
+  <noscript>This app needs JavaScript.</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
