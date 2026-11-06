@@ -166,8 +166,8 @@ def _download(url):
         if not shutil.which("curl"):
             raise
         out = subprocess.run(["curl", "-fsSL", "--max-time", "30", "-A", UA, url], capture_output=True, timeout=40)
-        # a slow connection may time out mid-feed: complete <item> blocks received so far are still usable
-        if not out.stdout or (out.returncode != 0 and b"</item>" not in out.stdout):
+        # a slow connection may time out mid-feed: complete items received so far are still usable
+        if not out.stdout or (out.returncode != 0 and b"</item>" not in out.stdout and b"</entry>" not in out.stdout):
             raise RuntimeError(out.stderr.decode(errors="replace").strip()[:120] or "download failed")
         return out.stdout[:6_000_000]
 

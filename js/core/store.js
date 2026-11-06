@@ -46,6 +46,8 @@ function defaults() {
     speaking: [],           // shadowing / pronunciation attempts { ts, kind, score }
     journal: [],            // reflections { ts, text, prompts }
     convo: [],              // AI conversation transcripts
+    real: { minutes: {}, plays: {}, follow: [], rated: [] }, // real listening: per day, per episode, shows followed, recent comprehension ratings
+    mxSound: {},            // Así suena México: unitId → { best, ts }
     news: {                 // daily Mexico digest
       date: '', fetched: 0, digest: [], headlines: [], read: {}, ai: {},
       prefs: { groups: ['mexico', 'cdmx', 'viajes', 'cultura', 'comida', 'sociedad', 'ciencia', 'economia'], gentle: true },

@@ -369,11 +369,3 @@ export const DICTATION = {
 };
 
 // Real-world comprehensible input, roughly by level.
-export const RESOURCES = [
-  { name: 'Dreaming Spanish', url: 'https://www.dreamingspanish.com', level: 'A1–C1', note: 'Comprehensible-input videos sorted by difficulty — ideal for extensive listening.' },
-  { name: 'Radio Ambulante', url: 'https://radioambulante.org', level: 'B2–C2', note: 'Award-winning Latin American narrative journalism, with transcripts; the Lupa app adds learner support.' },
-  { name: 'Notes in Spanish', url: 'https://www.notesinspanish.com', level: 'A2–C1', note: 'Natural conversations from Spain in three levels.' },
-  { name: 'Duolingo Spanish Podcast', url: 'https://podcast.duolingo.com', level: 'B1–B2', note: 'True stories told in slow, clear Spanish with English narration.' },
-  { name: 'Easy Spanish (YouTube)', url: 'https://www.youtube.com/@EasySpanish', level: 'A2–C1', note: 'Street interviews across Spanish-speaking countries, with dual subtitles.' },
-  { name: 'RTVE Play', url: 'https://www.rtve.es/play/', level: 'B2–C2', note: 'Spanish public TV and radio: series, documentaries, news.' },
-];

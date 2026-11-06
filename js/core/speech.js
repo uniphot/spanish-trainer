@@ -43,6 +43,12 @@ function preferredVoice() {
   return vs.find((v) => want.test(v.lang)) || vs[0] || null;
 }
 
+// A Mexican voice where the device has one, for news and everything about Mexico.
+export function mexicanVoice() {
+  const vs = spanishVoices();
+  return vs.find((v) => /es[-_]MX/i.test(v.lang)) || vs.find((v) => /es[-_](US|419)/i.test(v.lang)) || undefined;
+}
+
 // Distinct voices for multi-talker input (dialogues, perception training).
 export function voicePool() {
   const vs = spanishVoices();
@@ -210,6 +216,28 @@ export class Recorder {
     });
   }
 }
+// Play one stretch of a real recording (a line of a podcast) from its own host.
+const clipPlayer = typeof Audio === 'undefined' ? null : new Audio();
+export function stopClip() { clipPlayer?.pause(); }
+export function playClip({ src, start, end }, rate = 1) {
+  return new Promise((resolve, reject) => {
+    const a = clipPlayer;
+    const finish = () => { a.pause(); a.removeEventListener('timeupdate', onTime); resolve(); };
+    const onTime = () => { if (a.currentTime >= end) finish(); };
+    const go = () => {
+      a.currentTime = Math.max(0, start);
+      a.playbackRate = rate;
+      a.addEventListener('timeupdate', onTime);
+      a.play().catch((e) => { a.removeEventListener('timeupdate', onTime); reject(e); });
+    };
+    if (a.src === src && a.readyState >= 1) return go();
+    a.addEventListener('loadedmetadata', go, { once: true });
+    a.addEventListener('error', () => reject(new Error('This recording is no longer available.')), { once: true });
+    a.src = src;
+    a.load();
+  });
+}
+
 export function playUrl(url) {
   return new Promise((resolve) => { const a = new Audio(url); a.onended = resolve; a.onerror = resolve; a.play().catch(resolve); });
 }

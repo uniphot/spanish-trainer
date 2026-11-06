@@ -124,8 +124,11 @@ export function dailyPlan() {
   steps.push({ id: 'news', strand: 'input', title: 'Read one article from today’s Mexico news', min: 8, href: '#/news',
     why: 'Authentic texts about the country you’re going to. Read for meaning, then retell it — input followed by output.' });
   const inputMin = behind === 'input' ? 10 : 7;
-  steps.push({ id: 'listen', strand: 'input', title: 'Listening: one text through the full cycle', min: inputMin, href: '#/listening/comprehension',
+  // Alternate graded texts with real speech: most days should include real Mexican voices.
+  if (new Date().getDay() % 3 === 0) steps.push({ id: 'listen', strand: 'input', title: 'Listening: one text through the full cycle', min: inputMin, href: '#/listening/comprehension',
     why: 'Meaning-focused input slightly above your level, with prediction, verification and reflection.' });
+  else steps.push({ id: 'real-listen', strand: 'input', title: 'Real listening: a show from Escucha real', min: inputMin + 3, href: '#/listening/real',
+    why: 'Understanding real speech comes from hours of it, from many speakers. Aim to follow about 90 %.' });
   const outMin = behind === 'output' ? 10 : 7;
   const dow = new Date().getDay();
   if (dow % 2 === 0) steps.push({ id: 'write', strand: 'output', title: 'Writing task + feedback', min: outMin, href: '#/writing',

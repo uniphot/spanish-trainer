@@ -3,4 +3,5 @@ __pycache__/
 node_modules/
 .claude/
 news.json
+listen.json
 _site/

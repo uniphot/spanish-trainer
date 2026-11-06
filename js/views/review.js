@@ -7,7 +7,7 @@ import { topic as getTopic, LEVELS } from '../data/grammar.js';
 import { parseItem, renderExercise, solution, accentNote } from './exercise.js';
 import { conjugate, acceptedForms, PERSONS, TENSES, verbInfo } from '../core/conjugator.js';
 import { checkAnswer, alignWords } from '../core/text.js';
-import { speak, nextVoice } from '../core/speech.js';
+import { speak, nextVoice, playClip, stopClip } from '../core/speech.js';
 import { levelIndex } from '../core/learner.js';
 
 export const strand = 'language';
@@ -138,6 +138,11 @@ function renderCardBody(c, onAnswered) {
   if (c.type === 'sentence') {
     const text = c.data.text;
     const voice = nextVoice();
+    // Lines saved from a podcast play the real speaker; the synthetic voice is the fallback.
+    const say = (rate) => {
+      if (c.data.clip) return playClip(c.data.clip, rate ?? 1).catch(() => speak(text, { voice, rate }));
+      return speak(text, { voice, rate });
+    };
     const inp = h('textarea', { rows: 2, class: 'fix-area', placeholder: 'Type what you hear…', spellcheck: false });
     smartAccents(inp);
     const fb = h('div');
@@ -149,14 +154,15 @@ function renderCardBody(c, onAnswered) {
       fb.replaceChildren(h('div', { class: 'feedback ' + (score > 0.95 ? 'ok' : score > 0.7 ? 'almost' : 'bad') }, h('div', { class: 'fb-body' },
         h('div', { class: 'diff' }, ops.map((o) => h('span', { class: `d-${o.type}` }, o.ref ?? o.hyp, ' '))),
         h('div', { class: 'full' }, text), ops.some((o) => o.type === 'accent') ? accentNote(ops.filter((o) => o.type === 'accent').map((o) => o.ref)) : null,
-        c.data.en ? h('div', { class: 'small muted' }, c.data.en) : null), h('button', { class: 'say', onclick: () => speak(text, { voice }) }, icon('play', 16))));
+        c.data.en ? h('div', { class: 'small muted' }, c.data.en) : null), h('button', { class: 'say', onclick: () => say() }, icon('play', 16))));
+      stopClip();
       onAnswered(score > 0.95 ? 1 : score > 0.7 ? 0.5 : 0);
     };
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); check(); } });
-    setTimeout(() => speak(text, { voice }), 250);
+    setTimeout(() => say(), 250);
     return h('div', { class: 'ex-card' }, meta, h('div', { class: 'row', style: { marginBottom: '12px' } },
-      h('button', { class: 'say big', onclick: () => speak(text, { voice }) }, icon('play', 24)),
-      h('button', { class: 'btn small', onclick: () => speak(text, { voice, rate: 0.7 }) }, 'Slower'), h('span', { class: 'muted small' }, 'Dictation card — write exactly what you hear.')),
+      h('button', { class: 'say big', onclick: () => say() }, icon('play', 24)),
+      h('button', { class: 'btn small', onclick: () => say(0.7) }, 'Slower'), h('span', { class: 'muted small' }, c.data.clip ? 'Real speech — write exactly what you hear.' : 'Dictation card — write exactly what you hear.')),
     inp, accentBar(inp), h('div', { class: 'ex-actions' }, btn('Check', check, 'primary')), fb);
   }
   if (c.type === 'fix') {

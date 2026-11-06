@@ -49,6 +49,9 @@ export function accentDiff(given, correct) {
   const gExact = new Set(words(given));
   return words(correct).filter((w) => !gExact.has(w) && g.has(stripAccents(w)));
 }
+// Word-by-word comparison of what was said with what the learner typed (see alignWords).
+export const diffLine = (ops) => h('div', { class: 'diff' }, ops.map((o) => h('span', { class: `d-${o.type}`, title: o.type }, o.ref ?? o.hyp, (o.type === 'wrong' || o.type === 'spelling' || o.type === 'accent') ? h('span', { class: 'd-you' }, ` (${o.hyp})`) : null, ' ')));
+
 export function accentNote(list = []) {
   return h('div', { class: 'accent-note' }, '✎ Accent note: ', list.length ? h('b', { class: 'es' }, list.join(', ')) : 'check the tildes',
     ' — write it with the tilde next time. Not counted as a mistake.');

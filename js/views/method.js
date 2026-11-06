@@ -41,6 +41,12 @@ const P = [
     refs: [['Uchihara, Karas & Thomson — HVPT meta-analysis, Studies in Second Language Acquisition (2025)', 'https://www.cambridge.org/core/product/DE00A78365CD8CEB60A1FDB5D808195D'], ['Uchihara, Karas & Thomson (2024), Applied Psycholinguistics — production', 'https://www.cambridge.org/core/product/E38D8F5CE65DC708137B0E95F97C6BC7']],
   },
   {
+    title: 'Real speech needs its own training',
+    claim: 'Listening is fast, variable and has blurry word boundaries, which is why Renandya & Farrell argue that learners need large amounts of enjoyable listening, not only tests of it. Three findings shape how to do that. Same-language subtitles help you tune in to an unfamiliar accent while native-language ones get in the way: Dutch viewers of Scottish or Australian English films were better at repeating new speech after English subtitles, and worse after Dutch ones (Mitterer & McQueen, 2009). Staying with one series gives you far more repeated vocabulary than sampling (Rodgers & Webb, 2011). And comprehension improves when listeners control the speed themselves, mainly by slowing down (Zhao, 1997).',
+    app: 'Escucha real brings new Mexican videos and podcasts in every few hours, picked for your level and adjusted by how much you say you understood. The player has Spanish subtitles, 0.75× speed and a “last 6 seconds” repeat; you can follow shows, and your hours are counted. Where a show publishes a timed transcript you can work line by line, with dictation on the real voice, and lines you miss come back in review in that same voice. Así suena México teaches what breaks word recognition: phrases that run together, reduced forms, fillers and place names, plus the lines you’ll hear in everyday scenes.',
+    refs: [['Mitterer & McQueen (2009), PLoS ONE 4(11)', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC2775720'], ['Renandya & Farrell (2011), ELT Journal 65(1)', null], ['Rodgers & Webb (2011), TESOL Quarterly 45(4)', null], ['Montero Perez et al. (2013), System 41(3) — captioned video meta-analysis', null], ['Zhao (1997), Applied Linguistics 18(1)', null], ['Pellegrino, Coupé & Marsico (2011), Language 87(3) — speech rate across languages', null], ['A sociophonetic study of Mexico City vowel weakening (Ohio State)', 'https://u.osu.edu/speechlabsppo/vowelweakening']],
+  },
+  {
     title: 'Fluency is its own skill',
     claim: 'In Nation’s 4/3/2 technique the same talk is repeated with less time each round; with content held constant, attention goes to speed. De Jong & Perfetti (2011) found fewer hesitations in later rounds, and combining it with corrective feedback (Tran et al., 2021) improved accuracy as well. Shadowing studies (Hamada; Kadota) show listening gains, strongest for lower-level learners.',
     app: '4/3/2 with live words-per-minute and filler counts per round, optional AI feedback afterwards; shadowing with simultaneous recording, echo mode with recognition and build-up (back-chaining) for long sentences; 10-minute quick-writes and 1.25× replays of texts you already understand.',
@@ -55,7 +61,7 @@ const P = [
   {
     title: 'Input slightly above your level',
     claim: 'Comprehension drives acquisition when input is understandable but a little beyond current competence (Krashen’s “i+1”). Large amounts of such input — extensive listening and reading — build vocabulary and intuition that explicit study cannot.',
-    app: 'The level test sets your starting point; listening texts, dictation sentences and writing tasks are recommended at your level and one above. Noticias brings a daily digest of real Mexican news, with a readability estimate, tap-a-word support and a retelling task. The Listening hub links to graded real-world input (e.g. Dreaming Spanish, Radio Ambulante) for the hours outside the app.',
+    app: 'The level test sets your starting point; listening texts, dictation sentences and writing tasks are recommended at your level and one above. Noticias brings a daily digest of real Mexican news, with a readability estimate, tap-a-word support and a retelling task. Escucha real sorts real shows into three tiers, from slow Mexican podcasts to full-speed comedy, so there is always something just above your level.',
     refs: [['Krashen (1985), The Input Hypothesis', null]],
   },
   {
@@ -81,6 +87,7 @@ export async function render(root) {
       h('ul', null,
         h('li', null, 'Speech recognition checks whether a machine understood you — a proxy for intelligibility, not a pronunciation score. It can also “autocorrect” what you said.'),
         h('li', null, 'The built-in checker targets frequent learner errors and is tuned to avoid false alarms, so it misses many things. LanguageTool and the AI tutor catch more but can be wrong too — treat feedback as hints to think about.'),
-        h('li', null, 'Synthetic voices are clear but not natural speech. Use the real-world listening resources for genuine accents, speed and overlap.'),
+        h('li', null, 'Synthetic voices are clear but not natural speech: they don’t reduce vowels or swallow words. Use Escucha real for genuine accents, speed and overlap.'),
+        h('li', null, 'Podcast transcripts are machine-made and their line timings are estimates, so a line can start a moment early or contain a mistake. Only some shows publish them, and the ones that do aren’t mainly Mexican; for Mexican speech you rely on YouTube’s subtitles.'),
         h('li', null, 'No app replaces talking to people. Use the role-plays and the AI partner to prepare, then find language exchanges, tutors or communities to use your Spanish for real.'))));
 }

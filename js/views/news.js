@@ -4,38 +4,27 @@
 // retell the article in writing or out loud.
 import { h, mount, btn, card, icon, levelBadge, toast, timeAgo, sayBtn, modal } from '../core/ui.js';
 import { store, logDone, today } from '../core/store.js';
-import { speak, stopSpeaking, spanishVoices } from '../core/speech.js';
+import { speak, stopSpeaking, mexicanVoice } from '../core/speech.js';
 import { syllabify } from '../core/phonology.js';
-import { sentences, wordCount, escapeHtml } from '../core/text.js';
-import { reverseIndex, verbInfo, TENSES, PERSONS } from '../core/conjugator.js';
+import { sentences, wordCount } from '../core/text.js';
 import { addCard } from '../core/srs.js';
-import { MEXICANISMS, mxLookup } from '../data/mexico.js';
-import { aiAvailable, newsStudy, speakingFeedback, friendlyError } from '../core/ai.js';
-import { micWidget } from './speaking.js';
+import { fetchFeed, HEAVY } from '../core/feed.js';
+import { MEXICANISMS } from '../data/mexico.js';
+import { aiAvailable, newsStudy, friendlyError } from '../core/ai.js';
+import { attachWordPopup, wordSpans } from './wordpop.js';
+import { retellWidget } from './retell.js';
 
 export const strand = 'input';
 
 export const GROUPS = { mexico: 'México', cdmx: 'CDMX', viajes: 'Viajes', cultura: 'Cultura', comida: 'Comida', sociedad: 'Sociedad', ciencia: 'Ciencia y tecnología', economia: 'Economía', mundo: 'Mundo', deportes: 'Deportes', espectaculos: 'Espectáculos' };
 const JUNK = /cup[oó]n|cupones|descuento|resultados? del|sorteo|hor[oó]scopo|chispazo|melate|loter[ií]a|en vivo|minuto a minuto|quiniela|\btris\b|progol|d[oó]nde ver|a qu[eé] hora (es|juega|ver)|precio del d[oó]lar|tipo de cambio hoy|clima (hoy|cdmx)|pensi[oó]n del bienestar|calendario de pagos/i;
-const HEAVY = /asesin|homicid|narco|cad[aá]ver|balacera|ejecutad|fosa|secuestr|feminicid|masacre|enfrentamiento|c[aá]rtel|violaci[oó]n|desmembr|tirote|ataque armado|a balazos|sicari|extorsi[oó]n|osamenta|linchad/i;
-const NO_HIGHLIGHT = new Set(['padre', 'lana', 'joven', 'sale', 'fresa', 'foco', 'agarrar', 'pluma', 'picar', 'pesos', 'colonia', 'cuadra', 'boleto', 'carro', 'propina', 'credencial']);
 
 let memory = null; // last /api/news response (full article list) for this page load
 
-// The local server (serve.py) fetches the feeds live at api/news; the published static site has
-// no server, so it reads news.json, which a scheduled GitHub Action regenerates every few hours.
 async function fetchNews(force = false) {
   if (memory && !force) return memory;
-  let res;
-  try {
-    res = await fetch(`api/news${force ? '?refresh=1' : ''}`);
-    if (res.status === 404 || res.status === 405) res = await fetch('news.json', { cache: force ? 'no-cache' : 'default' });
-  } catch { throw new Error('offline'); }
-  if (res.status === 404) throw new Error('no-server');
-  const data = await res.json();
-  if (!data.items?.length) throw new Error(data.error || 'empty');
-  memory = data;
-  return data;
+  memory = await fetchFeed('news', force);
+  return memory;
 }
 
 // Szigriszt-Pazos perspicuity index (the Spanish adaptation of Flesch reading ease).
@@ -163,21 +152,6 @@ async function digestPage(root) {
 }
 
 // ---- Reader -------------------------------------------------------------------------------
-function mexicanVoice() {
-  const vs = spanishVoices();
-  return vs.find((v) => /es[-_]MX/i.test(v.lang)) || vs.find((v) => /es[-_](US|419)/i.test(v.lang)) || undefined;
-}
-
-function wordInfo(word) {
-  const lw = word.toLowerCase();
-  const rs = (reverseIndex().get(lw) || []).slice(0, 3);
-  return rs.map((r) => {
-    const info = verbInfo(r.inf) || verbInfo(r.inf + 'se') || {};
-    const tense = r.tense === 'pp' ? 'participio' : r.tense === 'ger' ? 'gerundio' : TENSES[r.tense]?.es || r.tense;
-    return `${r.inf}${info.en ? ` (${info.en})` : ''} · ${tense}${r.person >= 0 ? ` · ${PERSONS[r.person]}` : ''}`;
-  });
-}
-
 async function reader(root, id) {
   const N = store.state.news;
   let it = N.digest.find((x) => x.id === id) || memory?.items.find((x) => x.id === id);
@@ -192,49 +166,16 @@ async function reader(root, id) {
   const voice = mexicanVoice();
   const text = articleText(it);
   const r = readability(text);
-  const popover = h('div', { class: 'word-pop', style: { display: 'none' } });
-  const closePop = () => { popover.style.display = 'none'; };
-  const paraEls = it.paragraphs.map((p, pi) => {
-    const html = escapeHtml(p).replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g, (w) => {
-      const mx = mxLookup(w);
-      return `<span class="w${mx && !NO_HIGHLIGHT.has(w.toLowerCase()) ? ' mx' : ''}">${w}</span>`;
-    });
-    return h('p', { 'data-i': pi }, h('span', { html }), ' ', h('button', { class: 'say', title: 'Listen to this paragraph', onclick: () => speak(p, { voice, rate: 0.95 }) }, icon('play', 13)));
-  });
+  const paraEls = it.paragraphs.map((p, pi) => h('p', { 'data-i': pi }, h('span', { html: wordSpans(p) }), ' ',
+    h('button', { class: 'say', title: 'Listen to this paragraph', onclick: () => speak(p, { voice, rate: 0.95 }) }, icon('play', 13))));
   const article = h('div', { class: 'transcript news-body' }, paraEls);
-  article.addEventListener('click', (e) => {
-    const w = e.target.closest('.w');
-    if (!w) return;
-    const word = w.textContent;
-    const pText = it.paragraphs[+w.closest('p').dataset.i];
-    const sentence = sentences(pText).find((s) => new RegExp(`(^|[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ])${word}([^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]|$)`).test(s)) || pText;
-    const mx = mxLookup(word);
-    const verb = wordInfo(word);
-    const meaning = h('input', { type: 'text', placeholder: 'Meaning (your own words)…' });
-    popover.replaceChildren(
-      h('div', { class: 'row between' }, h('b', { class: 'es', style: { fontSize: '1.2rem' } }, word), h('button', { class: 'icon-btn', onclick: closePop, 'aria-label': 'Close' }, icon('x', 16))),
-      mx ? h('div', { class: 'small', style: { margin: '4px 0' } }, h('span', { class: 'tag' }, '🇲🇽 Mexico'), ' ', mx[1], mx[3] ? h('div', { class: 'muted' }, mx[3]) : null) : null,
-      verb.length ? h('div', { class: 'small muted', style: { margin: '4px 0' } }, verb.map((v) => h('div', null, v))) : null,
-      h('div', { class: 'row', style: { margin: '8px 0' } }, sayBtn(word, { voice }),
-        h('a', { class: 'btn small', href: `https://www.spanishdict.com/translate/${encodeURIComponent(word.toLowerCase())}`, target: '_blank', rel: 'noopener' }, 'SpanishDict'),
-        h('a', { class: 'btn small', href: `https://www.wordreference.com/es/en/translation.asp?spen=${encodeURIComponent(word.toLowerCase())}`, target: '_blank', rel: 'noopener' }, 'WordReference')),
-      meaning,
-      h('div', { class: 'row', style: { marginTop: '8px' } },
-        btn('Save word', () => {
-          addCard(`n:${it.id}:${word.toLowerCase()}`, 'custom', { front: `¿Qué significa «${word}»?\n${sentence}`, back: meaning.value.trim() || (mx ? mx[1] : '(look it up and say it in Spanish)') }, { source: 'manual', priority: true });
-          toast(`“${word}” added to review`, 'ok'); closePop();
-        }, 'small primary'),
-        btn('Save sentence', () => {
-          addCard(`s:${sentence.slice(0, 50)}`, 'sentence', { text: sentence }, { source: 'dictation', priority: true });
-          toast('Sentence added as a dictation card', 'ok'); closePop();
-        }, 'small')));
-    const rect = w.getBoundingClientRect();
-    popover.style.display = 'block';
-    popover.style.top = `${window.scrollY + rect.bottom + 6}px`;
-    popover.style.left = `${Math.max(8, Math.min(window.innerWidth - 320, rect.left))}px`;
+  const popup = attachWordPopup(article, {
+    voice, idPrefix: `n:${it.id}`,
+    sentenceOf: (w, word) => {
+      const pText = it.paragraphs[+w.closest('p').dataset.i];
+      return sentences(pText).find((s) => new RegExp(`(^|[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ])${word}([^A-Za-zÁÉÍÓÚÜÑáéíóúüñ]|$)`).test(s)) || pText;
+    },
   });
-  const onDocClick = (e) => { if (!popover.contains(e.target) && !e.target.closest?.('.w')) closePop(); };
-  document.addEventListener('click', onDocClick);
 
   let readingAll = false;
   const listenAll = btn([icon('play', 15), ' Listen to the article'], async () => {
@@ -254,7 +195,7 @@ async function reader(root, id) {
     h('p', { class: 'small muted' }, 'Turning input into output is where the learning sticks: retell the story in your own words.'),
     h('div', { class: 'row' },
       h('a', { class: 'btn primary', href: `#/writing/news/${it.id}` }, '✍︎ Retell it in writing'),
-      btn([icon('mic', 15), ' Say it out loud'], (e) => { e.currentTarget.replaceWith(sayIt(it)); }),
+      btn([icon('mic', 15), ' Say it out loud'], (e) => { e.currentTarget.replaceWith(retellWidget({ task: `Retell this news article: ${it.title}`, hint: 'Tell the story in 1–2 minutes: what happened, where, who, and what you think.', compare: 'Listen to your recording and compare it with the article.' })); }),
       aiAvailable() ? btn('✦ Easier version, key words & quiz', () => studyAI(it, ai)) : null,
       btn('✓ Mark as read', () => {
         N.read[it.id] = Date.now(); store.save(); logDone('news'); toast('Nice — marked as read', 'ok');
@@ -272,27 +213,8 @@ async function reader(root, id) {
     h('div', { class: 'row', style: { marginBottom: '10px' } }, listenAll, voice ? h('span', { class: 'small muted' }, `voice: ${voice.name}`) : null),
     article,
     h('p', { class: 'small' }, h('a', { href: it.link, target: '_blank', rel: 'noopener' }, `Read the full article on ${it.outlet} →`)),
-    after, popover);
-  return () => { document.removeEventListener('click', onDocClick); stopSpeaking(); };
-}
-
-function sayIt(it) {
-  const out = h('div');
-  const mic = micWidget({ continuous: true, label: 'Start retelling', stopLabel: 'Done', onDone: async ({ transcript, duration }) => {
-    if (!transcript) { out.replaceChildren(h('p', { class: 'small muted' }, 'Listen to your recording and compare it with the article.')); return; }
-    const wpm = duration ? Math.round(wordCount(transcript) / (duration / 60)) : null;
-    out.replaceChildren(h('p', { class: 'es' }, transcript), h('p', { class: 'small muted' }, `${wordCount(transcript)} words${wpm ? ` · ${wpm} words/min` : ''}`));
-    logDone('speak');
-    if (aiAvailable()) out.append(btn('✦ Feedback on my retelling', async (e) => {
-      e.currentTarget.disabled = true;
-      try {
-        const r = await speakingFeedback({ transcript, task: `Retell this news article: ${it.title}`, level: store.state.profile.level });
-        out.append(h('p', null, r.summary), ...r.errors.map((er) => h('div', { class: 'issue' }, h('span', { class: 'orig' }, er.original), ' → ', h('span', { class: 'fixd' }, er.correction), h('div', { class: 'small muted' }, er.explanation))),
-          h('p', { class: 'es' }, h('b', 'Better version: '), r.better_version));
-      } catch (err) { out.append(h('p', { class: 'note warn' }, friendlyError(err))); }
-    }, 'small'));
-  } });
-  return h('div', { class: 'stack', style: { width: '100%', marginTop: '10px' } }, h('p', { class: 'small muted' }, 'Tell the story in 1–2 minutes: what happened, where, who, and what you think.'), mic, out);
+    after, popup.el);
+  return () => { popup.destroy(); stopSpeaking(); };
 }
 
 async function studyAI(it, box) {

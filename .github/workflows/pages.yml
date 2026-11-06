@@ -1,6 +1,6 @@
-# Publishes the app to GitHub Pages. GitHub Pages only serves static files, so the news that
-# serve.py fetches live is generated here instead: every 3 hours a fresh news.json is built
-# from the RSS feeds in news.py and deployed together with the app.
+# Publishes the app to GitHub Pages. GitHub Pages only serves static files, so the feeds that
+# serve.py fetches live are generated here instead: every 3 hours a fresh news.json and
+# listen.json are built from news.py and listen.py and deployed together with the app.
 name: Publish site
 
 on:
@@ -38,6 +38,9 @@ jobs:
       - name: Fetch today's news
         # a failed fetch must not block publishing the app; the page then shows its own error
         run: python3 news.py _site/news.json || echo '{"fetched":0,"sources":[],"items":[],"error":"news fetch failed"}' > _site/news.json
+
+      - name: Fetch new episodes and videos
+        run: python3 listen.py _site/listen.json || echo '{"fetched":0,"sources":[],"items":[],"error":"listening feed failed"}' > _site/listen.json
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

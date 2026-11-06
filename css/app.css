@@ -396,3 +396,22 @@ input.blank.almost, .blank.almost { border-color: var(--almost); color: var(--al
 }
 /* Keyboard shortcuts mean nothing on a phone. */
 @media (pointer: coarse) { .kbd-hint, .opt .key { display: none; } }
+
+/* Escucha real: player and transcript */
+.video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: var(--radius); overflow: hidden; margin-bottom: 10px; }
+.video-frame iframe, .video-frame > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.player-bar { position: sticky; top: 8px; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.player-bar input[type=range] { flex: 1 1 100%; accent-color: var(--accent); }
+.player-bar .chips { margin: 0; flex-wrap: nowrap; }
+.player-bar .chip { padding: 3px 9px; }
+.guide { margin-bottom: 14px; }
+.guide summary { cursor: pointer; font-weight: 500; }
+.guide ol { margin: 8px 0 0; padding-left: 20px; }
+.tr-box { position: relative; max-height: 52vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 10px; padding: 6px; }
+.tr-box .line { margin: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 1.05rem; line-height: 1.6; }
+.tr-box .line.now { background: var(--accent-soft); }
+.tr-box.blind .line:not(.shown) .t { filter: blur(6px); user-select: none; -webkit-user-select: none; }
+.tr-box .line .w { border-radius: 3px; }
+.tr-box .line .w.mx { border-bottom: 2px dotted var(--ok); }
+.line-tools { margin-top: 6px; }
+@media (max-width: 860px) { .player-bar { top: 58px; } }

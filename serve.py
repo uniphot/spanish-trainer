@@ -3,13 +3,15 @@
 
 Speech recognition and the microphone need a "secure context"; localhost counts as one,
 so open the app through this server rather than double-clicking index.html.
-It also serves /api/news: today's articles from a fixed list of Mexican news feeds (news.py).
+It also serves /api/news (today's articles from Mexican news feeds, news.py) and /api/listen
+(the newest episodes and videos from Mexican podcasts and YouTube channels, listen.py).
 """
 import http.server
 import socketserver
 import sys
 import webbrowser
 
+import listen
 import news
 
 PORT = next((int(a) for a in sys.argv[1:] if a.isdigit()), 8770)
@@ -22,9 +24,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/api/news":
+        feed = {"/api/news": news.get_news, "/api/listen": listen.get_listen}.get(self.path.split("?")[0])
+        if feed:
             try:
-                body = news.get_news(force="refresh=1" in self.path)
+                body = feed(force="refresh=1" in self.path)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
             except Exception as e:  # network down, etc.

@@ -1,11 +1,11 @@
-// Escuchar: metacognitive listening cycle, dictation, numbers & times, resources.
+// Escuchar: real Mexican audio and video, metacognitive listening cycle, dictation, numbers & times.
 import { h, mount, btn, card, icon, shuffle, sample, pick, levelBadge, toast, smartAccents, accentBar, tabs, sayBtn } from '../core/ui.js';
 import { store, logDone, logError, logMinutes } from '../core/store.js';
-import { TEXTS, DICTATION, RESOURCES } from '../data/listening.js';
+import { TEXTS, DICTATION } from '../data/listening.js';
 import { LEVELS } from '../data/grammar.js';
 import { speak, speakLines, stopSpeaking, voicePool, nextVoice } from '../core/speech.js';
 import { alignWords, escapeHtml } from '../core/text.js';
-import { accentNote } from './exercise.js';
+import { accentNote, diffLine } from './exercise.js';
 import { addCard } from '../core/srs.js';
 import { levelIndex } from '../core/learner.js';
 
@@ -13,6 +13,8 @@ export const strand = 'input';
 
 export async function render(root, params, ctx) {
   const [sub, id] = params;
+  if (sub === 'real') return (await import('./real.js')).renderReal(root, params, ctx);
+  if (sub === 'mexico') return (await import('./mxsound.js')).renderMx(root, params, ctx);
   if (sub === 'comprehension' && id) { const t = TEXTS.find((x) => x.id === id); if (t) return cycle(root, t, ctx); }
   if (sub === 'comprehension') return textList(root);
   if (sub === 'dictation') { ctx.setStrand('language'); return dictation(root, ctx.params.get('level')); }
@@ -26,6 +28,10 @@ function hub(root) {
     h('div', { class: 'page-head' }, h('h1', 'Escuchar'),
       h('p', { class: 'lead' }, 'Listening is the skill learners practise least deliberately. Here you train it two ways: understanding meaning (the full listening cycle) and decoding sounds into words (dictation, numbers, minimal pairs).')),
     h('div', { class: 'grid grid-2' },
+      h('a', { class: 'tile', href: '#/listening/real' }, h('div', { class: 'tile-tag' }, 'Real speech · new episodes daily'), h('h3', 'Escucha real'),
+        h('p', null, 'Videos and podcasts from real Mexicans, chosen for your level, with slow-down, repeat, Spanish subtitles and line-by-line transcripts.')),
+      h('a', { class: 'tile', href: '#/listening/mexico' }, h('div', { class: 'tile-tag' }, 'Decoding · for your trip'), h('h3', 'Así suena México'),
+        h('p', null, 'Why Mexican speech is hard to catch: phrases that run together, swallowed words, fillers, place names, and what you’ll hear at a taquería, in an Uber or on the Metro.')),
       h('a', { class: 'tile', href: '#/listening/comprehension' }, h('div', { class: 'tile-tag' }, 'Meaning · input'), h('h3', 'Listening cycle'),
         h('p', null, `Predict → listen → verify → listen again → check with the transcript → reflect. ${TEXTS.length} graded texts with different voices. ${done} completed.`)),
       h('a', { class: 'tile', href: '#/listening/dictation' }, h('div', { class: 'tile-tag' }, 'Decoding'), h('h3', 'Dictation'),
@@ -35,11 +41,7 @@ function hub(root) {
       h('a', { class: 'tile', href: '#/speaking/pronunciation' }, h('div', { class: 'tile-tag' }, 'Perception'), h('h3', 'Minimal pairs'),
         h('p', null, 'pero/perro, caro/carro, papa/papá… Train your ear with several voices, then your mouth.')),
       h('a', { class: 'tile', href: '#/writing/dictogloss' }, h('div', { class: 'tile-tag' }, 'Listening → writing'), h('h3', 'Dictogloss'),
-        h('p', null, 'Hear a short text twice, note key words, reconstruct it, compare. Makes you notice the grammar you didn’t catch.'))),
-    card(h('h3', 'Beyond the app: extensive listening'),
-      h('p', { class: 'small muted' }, 'Comprehension grows with sheer hours of understandable input. Aim for content where you follow ~90 % of the meaning — easy enough to enjoy, a little above your level.'),
-      RESOURCES.map((r) => h('div', { class: 'err-row' }, h('span', { class: 'tag' }, r.level),
-        h('div', { style: { flex: 1 } }, h('a', { href: r.url, target: '_blank', rel: 'noopener' }, r.name), h('div', { class: 'small muted' }, r.note))))));
+        h('p', null, 'Hear a short text twice, note key words, reconstruct it, compare. Makes you notice the grammar you didn’t catch.'))));
 }
 
 // ---- Listening cycle --------------------------------------------------------------------
@@ -253,7 +255,7 @@ function dictation(root, levelParam) {
       store.save();
       fb.replaceChildren(h('div', { class: `feedback ${score > 0.98 ? 'ok' : score > 0.75 ? 'almost' : 'bad'}` }, h('div', { class: 'fb-body' },
         h('div', { class: 'fb-title' }, `${Math.round(score * 100)}%`),
-        h('div', { class: 'diff' }, ops.map((o) => h('span', { class: `d-${o.type}`, title: o.type }, o.ref ?? o.hyp, (o.type === 'wrong' || o.type === 'spelling' || o.type === 'accent') ? h('span', { class: 'd-you' }, ` (${o.hyp})`) : null, ' '))),
+        diffLine(ops),
         ops.some((o) => o.type === 'accent') ? accentNote(ops.filter((o) => o.type === 'accent').map((o) => o.ref)) : null,
         h('div', { class: 'small muted' }, 'amber underline = accent note (not counted) · dashed = small spelling slip · red = wrong or missing · grey strikethrough = extra word')), h('button', { class: 'say', onclick: () => play() }, icon('play', 16))),
         h('div', { class: 'ex-actions' }, btn(['Next ', icon('arrow', 16)], () => { i++; show(); }, 'primary', { id: 'next-btn' })));
